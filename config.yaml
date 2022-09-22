@@ -1,18 +1,56 @@
 # Define samples to be processed
-samples:
-    A: data/read_hg.fastq
+# this is NOT required anymore.. just keep for now
+#samples:
+#    A: data/read_hg.fastq
 
 # Define reference genome
-ref: data/reference/hg19.fa
+ref: 
+    hg19: data/reference/hg19.fa
+    hg38: data/reference/hg38.fa.masked
 
 # Define chrom.size reference
-chrs: /opt/SMURFSeq/data/hg19.chrom.sizes
+chrs: 
+    hg19: /opt/SMURFSeq/data/hg19/hg19.chrom.sizes
+    hg38: /opt/SMURFSeq/data/hg38/hg38.chrom.sizes
 
 # Define bin-reference
 bins:
     bin_size: /opt/SMURFSeq/data/hg19/bins_5k_hg19.bed
     bin_gc: /opt/SMURFSeq/data/hg19/bins_5k_hg19_gc.txt
     bin_ex: /opt/SMURFSeq/data/hg19/bins_5k_hg19_exclude.txt
+
+bin:
+    hg19:
+        5k: /opt/SMURFSeq/data/hg19/bins_5k_hg19.bed
+        20k: /opt/SMURFSeq/data/hg19/bins_20k_hg19.bed
+        50k: /opt/SMURFSeq/data/hg19/bins_50k_hg19.bed
+    hg38:
+        5k: /opt/SMURFSeq/data/hg38/bins_5k_hg38.bed
+        20k: /opt/SMURFSeq/data/hg38/bins_20k_hg38.bed
+        50k: /opt/SMURFSeq/data/hg38/bins_50k_hg38.bed
+
+bex:
+    hg19:
+        5k: /opt/SMURFSeq/data/hg19/bins_5k_hg19_exclude.txt
+        20k: /opt/SMURFSeq/data/hg19/bins_20k_hg19_exclude.txt
+        50k: /opt/SMURFSeq/data/hg19/bins_50k_hg19_exclude.txt
+    hg38:
+        5k: /opt/SMURFSeq/data/hg38/bins_5k_hg38_exclude.txt
+        20k: /opt/SMURFSeq/data/hg38/bins_20k_hg38_exclude.txt
+        50k: /opt/SMURFSeq/data/hg38/bins_50k_hg38_exclude.txt
+
+bgc:
+    hg19:
+        5k: /opt/SMURFSeq/data/hg19/bins_5k_hg19_gc.txt
+        20k: /opt/SMURFSeq/data/hg19/bins_20k_hg19_gc.txt
+        50k: /opt/SMURFSeq/data/hg19/bins_50k_hg19_gc.txt
+    hg38:
+        5k: /opt/SMURFSeq/data/hg38/bins_5k_hg38_gc.txt
+        20k: /opt/SMURFSeq/data/hg38/bins_20k_hg38_gc.txt
+        50k: /opt/SMURFSeq/data/hg38/bins_50k_hg38_gc.txt
+
+
+
 
 
 # Define scripts

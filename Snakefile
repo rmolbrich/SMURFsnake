@@ -3,20 +3,37 @@
 
 
 ## Project configuration ##
-
-# Project config to set-up variables and input files.
 configfile: "config.yaml"
 
-# Define final output files to facilitate execution of pipeline with single command.
-# rule all:
-# 	input:
-# 		"results/cnvs/{sample}.pdf"
+## Use tags 'hg19' or 'hg38' to select for reference genome as listed in 'config.yaml'
+# 
+# This is used in 'rule bwa_map'
+def get_ref_genome(wildcards):
+	return config["ref"][wildcards.reference]
 
-## ToDo: understand why exactly this approach is required
-# Retrieve input files from config file.
-def get_bwa_map_input_fastqs(wildcards):
-    return config["samples"][wildcards.sample]
+## Use tags 'hg19' or 'hg38' to select chrom sizes for reference
+# 
+# This is used in 'rule count_bins'
+def get_ref_chrom(wildcards):
+	return config["chrs"][wildcards.reference]
 
+## Use tags for genome-reference and bin-size ('5k','20k','50k') to find correct files
+#
+# This is used in 'rule count_bins'
+def get_bin_size(wildcards):
+	return config["bin"][wildcards.reference][wildcards.bin_size]
+
+## Use tags for genome-reference and bin-size ('5k','20k','50k') to find correct files
+#
+# This is used in 'rule analyse_cnv'
+def get_bin_ex(wildcards):
+	return config["bex"][wildcards.reference][wildcards.bin_size]
+
+## Use tags for genome-reference and bin-size ('5k','20k','50k') to find correct files
+#
+# This is used in 'rule analyse_cnv'
+def get_bin_gc(wildcards):
+	return config["bgc"][wildcards.reference][wildcards.bin_size]
 
 ## Project rules ##
 
@@ -24,13 +41,13 @@ def get_bwa_map_input_fastqs(wildcards):
 ## ToDo: use minimap2
 rule bwa_map:
 	input:
-		get_bwa_map_input_fastqs
+		"data/raw_reads/{sample}.fastq"
 	output:
-		"results/mapped_reads/{sample}.sam"
+		"data/mapped_reads/{sample}_{reference}.sam"
 	params:
-		ref=config["ref"]
+		ref=get_ref_genome
 	log:
-		"log/bwa_mem/{sample}.log"
+		"log/bwa_mem/{sample}_{reference}.log"
 	threads: 8
 	shell:
 		"bwa mem -x ont2d -k 12 -W 12 -A 4 -B 10 -O 6 -E 3 -T 120 -t {threads} {params.ref} {input} > {output}"
@@ -38,40 +55,40 @@ rule bwa_map:
 # Use samtools to filter ambiguously mapped reads
 rule filt_ambig:
 	input: 
-		"results/mapped_reads/{sample}.sam"
+		"data/mapped_reads/{sample}_{reference}.sam"
 	output:
-		"results/unambig_reads/{sample}.sam"
+		"data/unambig_reads/{sample}_{reference}.sam"
 	shell:
 		"samtools view -h -q 1 -e '[AS]>=120' {input} > {output}" 
 
 # Calculate bin-counts
 rule count_bins:
 	input:
-		"results/unambig_reads/{sample}.sam"
+		"data/unambig_reads/{sample}_{reference}.sam"
 	output:
-		bcbed="results/bin_counts/{sample}_bin_counts.bed",
-		bstxt="results/bin_counts/{sample}_bin_stats.txt"
+		bcbed="data/bin_counts/{sample}_{reference}_{bin_size}_bin_counts.bed",
+		bstxt="data/bin_counts/{sample}_{reference}_{bin_size}_bin_stats.txt"
 	params:
 		script=config["scripts"]["count"],
-		chrs=config["chrs"],
-		bins=config["bins"]["bin_size"]
+		chrs=get_ref_chrom,
+		bins=get_bin_size
 	shell:
 		"{params.script} -i {input} -c {params.chrs} -b {params.bins} -o {output.bcbed} -s {output.bstxt}"
 
 # Analyse CNVs
 rule analyse_cnv:
 	input:
-		"results/bin_counts/{sample}_bin_counts.bed"
+		"data/bin_counts/{sample}_{reference}_{bin_size}_bin_counts.bed"
 	output:
-		pdf="results/cnvs/{sample}.pdf",
-		dat="results/cnvs/{sample}.data.txt",
-		sho="results/cnvs/{sample}.short.txt"
+		pdf="data/cnvs/{sample}_{reference}_{bin_size}.pdf",
+		dat="data/cnvs/{sample}_{reference}_{bin_size}.data.txt",
+		sho="data/cnvs/{sample}_{reference}_{bin_size}.short.txt"
 	params:
 		script=config["scripts"]["analysis"],
-		bingc=config["bins"]["bin_gc"],
-		binex=config["bins"]["bin_ex"]
+		bingc=get_bin_gc,
+		binex=get_bin_ex
 	shell:
-		"{params.script} {input} results/cnvs/{wildcards.sample} {params.bingc} {params.binex}"
+		"{params.script} {input} data/cnvs/{wildcards.sample}_{wildcards.reference}_{wildcards.bin_size} {params.bingc} {params.binex}"
 
 
 
