@@ -1,0 +1,7 @@
+# MACOS local files
+.DS_store
+
+# Project local files
+data
+SMURFsnakeSlurm.sh
+SMURFsnake.sif
