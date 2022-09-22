@@ -1,0 +1,146 @@
+Bootstrap: docker
+From: ubuntu:bionic
+
+%labels
+# author and copyright information
+	Maintainer Michael Olbrich
+	Version v0.1
+
+%help
+# usage information
+
+%pre
+# Before installation (host)
+
+%setup
+# After installation (host)
+	# preparing access to cluster directories
+	mkdir $SINGULARITY_ROOTFS/scratch
+	mkdir $SINGULARITY_ROOTFS/data
+
+%post
+# After installation (guest)
+	## First: Update and install minimal requirements
+	apt-get update && apt-get -y upgrade
+	apt-get --yes --no-install-recommends install \
+	build-essential git curl wget openssh-client \
+	tar gzip bzip2 ca-certificates \
+	libglib2.0-0 libxext6 libsm6 libxrender1 locales
+	
+	# Configure default locale
+	echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+	locale-gen en_US.utf8
+	/usr/sbin/update-locale LANG=en_US.UTF-8
+	export LC_ALL=en_US.UTF-8
+	export LANG=en_US.UTF-8
+	
+	apt-get update
+	apt-get install -y --no-install-recommends \
+	software-properties-common dirmngr
+	
+		## Add CRAN repo and install R from there. 
+	## Executed in a second step because 'wget' was not installed before.
+	# 1. Setup GPG Keys
+	wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+# 	# 2. Add the correct R repository
+	add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+	# 3. Update system and install R-base
+	apt update
+	apt --yes install r-base r-base-core r-base-dev r-recommended r-base-html \
+	libcurl4-openssl-dev libssl-dev libxml2-dev libcairo2-dev libxt-dev libopenblas-dev
+	
+	# 4. Execute the R-script that installs the required packages.
+	#Rscript /opt/R_packages.R
+	
+	## Clean-up for smaller image size
+	rm -rf /var/lib/apt/lists/*
+	apt-get clean
+	
+	## try using R
+	Rscript /opt/R_packages.R
+	
+	## Third: Aquire and install latest Mamba version
+	# get OS name/machine-type
+	readonly mamba_installer="Mambaforge-$(uname)-$(uname -m).sh"
+	# set directory
+	readonly mamba_prefix="/home/mamba"
+	# Download
+	curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/${mamba_installer}"
+	# Install
+	bash "${mamba_installer}" -b -p "${mamba_prefix}"
+	# Clean-up
+	rm "${mamba_installer}"
+	
+	echo "Scripting Magic"
+	# Put the Conda initialization script in a file for lazy loading/
+	# Singularity does all the environment sourcing as shell (only latter calls bash),
+	# which conda does not support.
+	# We put the content in a file, manually call bash, and source it.
+	{
+		echo 'eval "$(' "'${mamba_prefix}/bin/conda' 'shell.bash' 'hook' 2> /dev/null" ')"'
+		echo 'if [ $? -eq 0 ]; then'
+		echo '  eval "$__conda_setup"'
+		echo 'else'
+		echo '  if [ -f ' "'${mamba_prefix}/etc/profile.d/conda.sh'" ']; then'
+		echo '    .' "'${mamba_prefix}/etc/profile.d/conda.sh'"
+		echo '  else'
+		echo '    export PATH="/home/mamba/bin:$PATH"'
+		echo '  fi'
+		echo 'fi'
+		echo 'unset __conda_setup'
+	} >> ${mamba_prefix}/init.bash
+	
+	# Execute the post.bash script.
+	# Use bash to properly activate the conda environment and install packages.
+	# Other command such as cmake, pip, etc are better run inside the post.bash file so that they can
+	# Conda libraries.
+	echo 'source' "'${mamba_prefix}/init.bash'" | cat - /opt/post.bash | bash
+	
+	# And put path into the environment .. hopefully
+	# set to whatever your conda path is, I usually install to /opt
+	echo ". /home/mamba/etc/profile.d/conda.sh" >> $SINGULARITY_ENVIRONMENT
+	echo "conda activate snakemake" >> $SINGULARITY_ENVIRONMENT
+	
+	# Can we put the basic files of the SMURFSeq pipeline here
+	cd /opt/
+	unzip SMURFSeq.zip
+	rm SMURFSeq.zip
+
+%environment
+# Define environment variables
+	# Setting the environment variable MyVariable
+	# Extremely lazy sourcing of the Conda activation script
+	export PROMPT_COMMAND='source /home/mamba/init.bash; unset PROMPT_COMMAND'
+	# add conda to the path variable? For 'exec' because with shell it does work..
+	#PATH=$PATH:/opt/mamba/etc/profile.d
+
+%files
+# Copy local files into the container
+# Syntax: $FileOnMyPC $PathInTheContainer
+# Files must be located in the same directory as the recipe
+	environment.yaml /opt/environment.yaml
+	post.bash /opt/post.bash
+	R_packages.R /opt/R_packages.R
+	SMURFSeq.zip /opt/SMURFSeq.zip
+
+
+%runscript
+# Script runs when environment is executed
+	# For this container we want to activate the snakemake environment.
+	#conda activate snakemake
+	# hmm?!
+	exec "$@"
+
+%startscript
+# Script runs when executing as instance, i.e., using singularity instance.
+# This will run the container as a service.
+
+%test
+# Test correct function afer building (exit 0)
+  # Make sure that git was installed correctly
+  # Build process fails on 'exit 1' and the half-built container is removed
+  GitVersion=$(git --version | grep "git version")
+  if [ -z "$GitVersion" ]
+  then
+    echo "Git wasn't installed correctly! Aborting.."
+  fi

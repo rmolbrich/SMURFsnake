@@ -1,0 +1,18 @@
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python >= 3.9
+  - mamba
+  - snakemake
+  - bcftools
+  - samtools >=1.15
+  - bwa
+  - pysam
+  - numpy
+#  - argparse this is apparently already part of python >= 3.2
+# Jupyter notebooks and guppy methylization tool
+  - jupyter
+  - onnx
+# Helpful tools
+  - methylartist

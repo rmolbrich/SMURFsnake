@@ -1,0 +1,22 @@
+# Define samples to be processed
+samples:
+    A: data/read_hg.fastq
+
+# Define reference genome
+ref: data/reference/hg19.fa
+
+# Define chrom.size reference
+chrs: /opt/SMURFSeq/data/hg19.chrom.sizes
+
+# Define bin-reference
+bins:
+    bin_size: /opt/SMURFSeq/data/hg19/bins_5k_hg19.bed
+    bin_gc: /opt/SMURFSeq/data/hg19/bins_5k_hg19_gc.txt
+    bin_ex: /opt/SMURFSeq/data/hg19/bins_5k_hg19_exclude.txt
+
+
+# Define scripts
+scripts:
+    count: /opt/SMURFSeq/scripts/getBinCounts.py
+    analysis: /opt/SMURFSeq/scripts/cnvAnalysis.R
+
