@@ -1,9 +1,4 @@
-# Define samples to be processed
-# this is NOT required anymore.. just keep for now
-#samples:
-#    A: data/read_hg.fastq
-
-# Define reference genome
+# ToDo: Set to correct path.
 ref: 
     hg19: data/reference/hg19.fa
     hg38: data/reference/hg38.fa.masked
