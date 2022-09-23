@@ -15,7 +15,7 @@ ref:
 
 * The remaining paths in the `config.yaml` point to directories within the Singularity container. If you choose to run the pipeline without the image, the required scripts and binning-files are located in the `SMURFSeq.zip` within the `rebuild` directory. Alternatively, the files may be obtained from the original source at [smithlabcode](https://github.com/smithlabcode/smurfseq_scripts.git).
 
-* Construction of the singularity image requires a Unix machine with sudo rights and the singularity library in version >= 1.6.
+* Construction of the singularity image requires a Unix machine with sudo rights and the singularity library in version >= 1.6. Additional information is provided by the ReadMe located in the rebuild directory.
 
 * The file `pipeline.bash` contains the Snakemake execution command
 
