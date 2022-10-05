@@ -24,11 +24,15 @@ ref:
 
 Put the following line in the cluster-script to run pipeline as intended.
 
+Available options for the `reference` are 'hg19' and 'hg38'. Instructions for more reference bins are relayed by the readme within the `rebuild` folder.
+
+Available options for the bins sizes comprise '5k', '20k', and '50k' as provided by the SMURFSeq protocol.
+
 ```
 singularity exec --cleanenv SMURFsnake.sif bash pipeline.bash
 
 # Code in pipeline.bash - Syntax is {sample}_{reference}_{bin_size}
-snakemake --cores <INT> results/cnvs/{sample}_{reference}_{bin_size}.pdf
+snakemake --cores <INT> data/cnvs/{sample}_{reference}_{bin_size}.pdf
 ```
 
 ## Run in shell
