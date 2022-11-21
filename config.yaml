@@ -1,7 +1,7 @@
 # ToDo: Set to correct path.
 ref: 
-    hg19: data/reference/hg19.fa
-    hg38: data/reference/hg38.fa.masked
+    hg19: /data/lied_ontcancer/workspace/ref/hg19.fa
+    hg38: /data/lied_ontcancer/workspace/ref/hg38.fa.masked
 
 # Define chrom.size reference
 chrs: 

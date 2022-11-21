@@ -52,19 +52,31 @@ rule bwa_map:
 	shell:
 		"bwa mem -x ont2d -k 12 -W 12 -A 4 -B 10 -O 6 -E 3 -T 120 -t {threads} {params.ref} {input} > {output}"
 
+
 # Use samtools to filter ambiguously mapped reads
-rule filt_ambig:
+rule sam_bam:
 	input: 
 		"data/mapped_reads/{sample}_{reference}.sam"
 	output:
-		"data/unambig_reads/{sample}_{reference}.sam"
+		"data/mapped_reads/{sample}_{reference}.bam"
+	shell:
+		"samtools view -bS {input} > {output}" 
+
+
+# Use samtools to filter ambiguously mapped reads
+rule filt_ambig:
+	input: 
+		"data/mapped_reads/{sample}_{reference}.bam"
+	output:
+		"data/unambig_reads/{sample}_{reference}.bam"
 	shell:
 		"samtools view -h -q 1 -e '[AS]>=120' {input} > {output}" 
+
 
 # Calculate bin-counts
 rule count_bins:
 	input:
-		"data/unambig_reads/{sample}_{reference}.sam"
+		"data/unambig_reads/{sample}_{reference}.bam"
 	output:
 		bcbed="data/bin_counts/{sample}_{reference}_{bin_size}_bin_counts.bed",
 		bstxt="data/bin_counts/{sample}_{reference}_{bin_size}_bin_stats.txt"
@@ -74,6 +86,7 @@ rule count_bins:
 		bins=get_bin_size
 	shell:
 		"{params.script} -i {input} -c {params.chrs} -b {params.bins} -o {output.bcbed} -s {output.bstxt}"
+
 
 # Analyse CNVs
 rule analyse_cnv:
@@ -89,26 +102,4 @@ rule analyse_cnv:
 		binex=get_bin_ex
 	shell:
 		"{params.script} {input} data/cnvs/{wildcards.sample}_{wildcards.reference}_{wildcards.bin_size} {params.bingc} {params.binex}"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
